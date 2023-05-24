@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+package Server;
+option go_package = "./;pb";
+
+service ImageService {
+  // Загрузка картинки на сервер
+  rpc UploadImage (stream UploadImageRequest) returns (UploadImageResponse) {}
+  // Получение списка картинок
+  rpc ListImage (ListImagesRequest) returns (ListImagesResponse) {}
+  // Получение картинки с сервера
+  rpc DownloadImage (DownloadImageRequest) returns (stream DownloadImageResponse) {}
+}
+//Так как картинки могут быть большими, дробим их на чанки и посылаем данные стримом
+message UploadImageRequest {
+  oneof data{
+    ImageInfo info = 1;
+    bytes chunk_data = 2;
+  }
+}
+message ImageInfo{
+  string name = 1;
+  string type = 2;
+}
+
+//Возвращаем созданный id и размер сохраненной картинки
+message UploadImageResponse {
+  string id = 1;
+  uint32 size = 2;
+}
+//Пустой запрос, так как сервер просто возвращает список картинок
+message ListImagesRequest {
+}
+
+//Имя, дата создания и обновления файла
+message ImageName {
+  string name = 1;
+  google.protobuf.Timestamp createTime = 2;
+  google.protobuf.Timestamp updateTime = 3;
+}
+
+//Сервер возвращает массив с информацией о файлах
+message ListImagesResponse {
+  repeated ImageName Images = 1;
+}
+
+//Клиент отправляет название файла для скачивания
+message DownloadImageRequest {
+  string name =1;
+}
+//Сервер отравляет информацию о файле и сам файл
+message DownloadImageResponse {
+    ImageInfo info = 1;
+    bytes chunk_data = 2;
+}
